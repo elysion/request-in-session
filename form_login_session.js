@@ -66,16 +66,17 @@ const init = function (cookieUri, loginUri, username, password, csrfTokenKey, se
         method: 'POST',
         headers: {
           'X-CSRFToken': csrftoken,
-          'X-Requested-With': 'XMLHttpRequest',
+          'X-Requested-With': 'XMLHttpRequest', // TODO: only needed for beatport?
           'Referer': cookieUri
         },
         jar: cookieJar,
         uri,
         json
-      }).then(res => res.body)
+      })
+      .then(res => res.body)
     },
 
-    doGet: (uri, referer) => {
+    doGetJson: (uri, referer) => {
       return requestAsync({
         method: 'GET',
         jar: cookieJar,
@@ -83,7 +84,9 @@ const init = function (cookieUri, loginUri, username, password, csrfTokenKey, se
           'Accept': 'application/json'
         },
         uri
-      }).then(res => res.body)
+      })
+      .then(res => res.body)      
+      .then(JSON.parse)
     }
   }))
 }

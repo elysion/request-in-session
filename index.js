@@ -7,4 +7,7 @@ if (!password) {
     password = prompt.hide(`Password for ${username} for Beatport: `);
 }
 
-bpApi.init(username, password, api => api.getMyBeatport().tap(data => console.log(data)))
+bpApi.init(username, password, api => 
+    api.getClip(9989461).tap(data => console.log(data))
+        .then(() => api.getMyBeatport()).tap(data => console.log(data))
+)
