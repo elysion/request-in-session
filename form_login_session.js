@@ -1,8 +1,8 @@
-const Promise = require('bluebird')
-const requestAsync = Promise.promisify(require('request').defaults({ strictSSL: false }))
-const Cookie = require('tough-cookie').Cookie
-const _ = require('lodash')
-var prompt = require('prompt-sync')()
+const Promise = require("bluebird")
+const requestAsync = Promise.promisify(require("request").defaults({ strictSSL: false }))
+const Cookie = require("tough-cookie").Cookie
+const _ = require("lodash")
+var prompt = require("prompt-sync")()
 
 const init = function (cookieUri, loginUri, username, password, csrfTokenKey, sessionKey, callback) {
   let cookieJar = requestAsync.jar()
@@ -25,8 +25,8 @@ const init = function (cookieUri, loginUri, username, password, csrfTokenKey, se
 
   function submitLogin(csrftoken, username, password) {
     return requestAsync({
-      method: 'POST',
-      headers: { 'Referer': loginUri },
+      method: "POST",
+      headers: { "Referer": loginUri },
       jar: cookieJar,
       uri: loginUri,
       form: {
@@ -47,48 +47,56 @@ const init = function (cookieUri, loginUri, username, password, csrfTokenKey, se
 
   function getCookieFromRes(res, cookiename) {
     var cookies
-    if (res.headers['set-cookie'] instanceof Array) {
-      cookies = res.headers['set-cookie'].map(c => Cookie.parse(c))
+    if (res.headers["set-cookie"] instanceof Array) {
+      cookies = res.headers["set-cookie"].map(c => Cookie.parse(c))
     } else {
-      cookies = [Cookie.parse(res.headers['set-cookie'])]
+      cookies = [Cookie.parse(res.headers["set-cookie"])]
     }
 
-    const cookie = _.find(cookies, { 'key': cookiename })
+    const cookie = _.find(cookies, { "key": cookiename })
     return cookie ? cookie.value : undefined
   }
 
-  login().then(() => callback({
-    doPostJson: (uri, json) => {
-      const csrftoken = _(cookieJar.getCookies(cookieUri)).find(c => c.key === csrfTokenKey).value
-      console.log(csrftoken)
+  login()
+    .catch(err => callback(err))
+    .then(() => callback(null, {
+      postJson: (uri, json, callback) => {
+        const csrftoken = _(cookieJar.getCookies(cookieUri)).find(c => c.key === csrfTokenKey).value
 
-      return requestAsync({
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': csrftoken,
-          'X-Requested-With': 'XMLHttpRequest', // TODO: only needed for beatport?
-          'Referer': cookieUri
-        },
-        jar: cookieJar,
-        uri,
-        json
-      })
-      .then(res => res.body)
-    },
+        return requestAsync({
+          method: "POST",
+          headers: {
+            "X-CSRFToken": csrftoken,
+            "X-Requested-With": "XMLHttpRequest", // TODO: only needed for beatport?
+            "Referer": cookieUri
+          },
+          jar: cookieJar,
+          uri,
+          json
+        })
+          .then(res => res.body)
+          .tap(json => callback(null, json))
+          .catch(err => callback(err))
+      },
 
-    doGetJson: (uri, referer) => {
-      return requestAsync({
-        method: 'GET',
-        jar: cookieJar,
-        headers: {
-          'Accept': 'application/json'
-        },
-        uri
-      })
-      .then(res => res.body)      
-      .then(JSON.parse)
-    }
-  }))
+      getJson: (uri, callback) => 
+        requestAsync({
+          method: "GET",
+          jar: cookieJar,
+          headers: {
+            "Accept": "application/json"
+          },
+          uri
+        })
+          .then(res => res.body)      
+          .then(JSON.parse)
+          .tap(json => callback(null, json))
+          .catch(err => callback(err)),
+
+      getCookieJar : () => {
+        cookieJar
+      }
+    }))
 }
 
 module.exports = {
