@@ -13,7 +13,7 @@ const init = function (cookieUri, loginUri, username, password, csrfTokenKey, se
       .then(getSessionIdCookie)
       .tap(sessionid => {
         if (sessionid === undefined) {
-          throw new HttpError(401, "Tarkista käyttäjätunnus ja/tai salasana")
+          throw new Error("Login failed, please check credentials")
         }
       })
   }
