@@ -2,7 +2,6 @@ const Promise = require("bluebird")
 const requestAsync = Promise.promisify(require("request").defaults({ strictSSL: false }))
 const Cookie = require("tough-cookie").Cookie
 const _ = require("lodash")
-var prompt = require("prompt-sync")()
 
 const init = function (cookieUri, loginUri, username, password, csrfTokenKey, sessionKey, callback) {
   let cookieJar = requestAsync.jar()
