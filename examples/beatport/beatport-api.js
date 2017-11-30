@@ -1,6 +1,6 @@
 const BPromise = require("bluebird")
 
-const { init } = require("../../form_login_session.js")
+const { init } = require("../../request_in_session.js")
 
 const loginUri = "https://www.beatport.com/account/login"
 const cookieUri = "https://www.beatport.com/"
