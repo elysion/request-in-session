@@ -1,5 +1,7 @@
 const Promise = require("bluebird")
-const requestAsync = Promise.promisify(require("request").defaults({ strictSSL: false }))
+
+const request = require("request").defaults({ strictSSL: false })
+const requestAsync = Promise.promisify(request)
 const Cookie = require("tough-cookie").Cookie
 const _ = require("lodash")
 
@@ -45,7 +47,7 @@ const init = function (cookieUri, loginUri, username, password, csrfTokenKey, se
   }
 
   function getCookieFromRes(res, cookiename) {
-    var cookies
+    let cookies
     if (res.headers["set-cookie"] instanceof Array) {
       cookies = res.headers["set-cookie"].map(c => Cookie.parse(c))
     } else {
@@ -65,7 +67,6 @@ const init = function (cookieUri, loginUri, username, password, csrfTokenKey, se
       },
       uri
     })
-      .tap(res => console.log({res}))
   }
 
   login()
@@ -95,12 +96,23 @@ const init = function (cookieUri, loginUri, username, password, csrfTokenKey, se
           .tap(res => callback(null, res.body))
           .catch(err => callback(err)),
 
-      getJson: (uri, callback) => 
+      getJson: (uri, callback) =>
         get(uri)
           .then(res => res.body)
           .then(JSON.parse)
           .tap(json => callback(null, json))
           .catch(err => callback(err)),
+
+      getBlob: (uri, callback) => {
+        callback(null, request({
+          method: "GET",
+          headers: {
+            "Referer": cookieUri
+          },
+          jar: cookieJar,
+          uri
+        }))
+      },
 
       getCookieJar : () => {
         cookieJar
