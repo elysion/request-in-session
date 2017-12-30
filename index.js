@@ -56,6 +56,18 @@ const init = function (cookieUri, loginUri, username, password, csrfTokenKey, se
     return cookie ? cookie.value : undefined
   }
 
+  function get(uri) {
+    return requestAsync({
+      method: "GET",
+      jar: cookieJar,
+      headers: {
+        "Accept": "application/json"
+      },
+      uri
+    })
+      .tap(res => console.log({res}))
+  }
+
   login()
     .catch(err => callback(err))
     .then(() => callback(null, {
@@ -78,16 +90,14 @@ const init = function (cookieUri, loginUri, username, password, csrfTokenKey, se
           .catch(err => callback(err))
       },
 
+      get: (uri, callback) =>
+        get(uri)
+          .tap(res => callback(null, res.body))
+          .catch(err => callback(err)),
+
       getJson: (uri, callback) => 
-        requestAsync({
-          method: "GET",
-          jar: cookieJar,
-          headers: {
-            "Accept": "application/json"
-          },
-          uri
-        })
-          .then(res => res.body)      
+        get(uri)
+          .then(res => res.body)
           .then(JSON.parse)
           .tap(json => callback(null, json))
           .catch(err => callback(err)),
