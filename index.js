@@ -69,26 +69,34 @@ const init = function (cookieUri, loginUri, username, password, csrfTokenKey, se
     })
   }
 
+  function requestWithMethod(method, uri, json, callback) {
+    const csrftoken = _(cookieJar.getCookies(cookieUri)).find(c => c.key === csrfTokenKey).value
+
+    return requestAsync({
+      method: method,
+      headers: {
+        "X-CSRFToken": csrftoken,
+        "X-Requested-With": "XMLHttpRequest", // TODO: only needed for beatport?
+        "Referer": cookieUri
+      },
+      jar: cookieJar,
+      uri,
+      json
+    })
+      .then(res => res.body)
+      .tap(json => callback(null, json))
+      .catch(err => callback(err))
+  }
+
   login()
     .catch(err => callback(err))
     .then(() => callback(null, {
       postJson: (uri, json, callback) => {
-        const csrftoken = _(cookieJar.getCookies(cookieUri)).find(c => c.key === csrfTokenKey).value
+        requestWithMethod("POST", uri, json, callback)
+      },
 
-        return requestAsync({
-          method: "POST",
-          headers: {
-            "X-CSRFToken": csrftoken,
-            "X-Requested-With": "XMLHttpRequest", // TODO: only needed for beatport?
-            "Referer": cookieUri
-          },
-          jar: cookieJar,
-          uri,
-          json
-        })
-          .then(res => res.body)
-          .tap(json => callback(null, json))
-          .catch(err => callback(err))
+      deleteJson: (uri, json, callback) => {
+        requestWithMethod("DELETE", uri, json, callback)
       },
 
       get: (uri, callback) =>
