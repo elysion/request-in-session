@@ -5,6 +5,15 @@ const requestAsync = Promise.promisify(request)
 const Cookie = require("tough-cookie").Cookie
 const _ = require("lodash")
 
+const initWithSession = function (sessionCookieKey, sessionCookieValue, cookieUri, csrfTokenKey, csrfToken, callback) {
+  let cookieJar = requestAsync.jar()
+
+  cookieJar.setCookie(request.cookie(`${sessionCookieKey}=${sessionCookieValue}`), cookieUri)
+  cookieJar.setCookie(request.cookie(`${csrfTokenKey}=${csrfToken}`), cookieUri)
+
+  return callback(null, createSessionRequestObject(cookieJar, cookieUri, csrfTokenKey))
+}
+
 const init = function (cookieUri, loginUri, username, password, csrfTokenKey, sessionKey, callback) {
   let cookieJar = requestAsync.jar()
 
@@ -58,76 +67,79 @@ const init = function (cookieUri, loginUri, username, password, csrfTokenKey, se
     return cookie ? cookie.value : undefined
   }
 
-  function get(uri) {
-    return requestAsync({
-      method: "GET",
-      jar: cookieJar,
-      headers: {
-        "Accept": "application/json"
-      },
-      uri
-    })
-  }
-
-  function requestWithMethod(method, uri, json, callback) {
-    const csrftoken = _(cookieJar.getCookies(cookieUri)).find(c => c.key === csrfTokenKey).value
-
-    return requestAsync({
-      method: method,
-      headers: {
-        "X-CSRFToken": csrftoken,
-        "X-Requested-With": "XMLHttpRequest", // TODO: only needed for beatport?
-        "Referer": cookieUri
-      },
-      jar: cookieJar,
-      uri,
-      json
-    })
-      .then(res => res.body)
-      .tap(json => callback(null, json))
-      .catch(err => callback(err))
-  }
-
   login()
     .catch(err => callback(err))
-    .then(() => callback(null, {
-      postJson: (uri, json, callback) => {
-        requestWithMethod("POST", uri, json, callback)
-      },
+    .then(() => callback(null, createSessionRequestObject(cookieJar, cookieUri, csrfTokenKey)))
+}
 
-      deleteJson: (uri, json, callback) => {
-        requestWithMethod("DELETE", uri, json, callback)
-      },
+function createSessionRequestObject (cookieJar, cookieUri, csrfTokenKey) {
+  return {
+    postJson: (uri, json, callback) => {
+      requestWithMethod(cookieJar, cookieUri, csrfTokenKey, "POST", uri, json, callback)
+    },
 
-      get: (uri, callback) =>
-        get(uri)
-          .tap(res => callback(null, res.body))
-          .catch(err => callback(err)),
+    deleteJson: (uri, json, callback) => {
+      requestWithMethod(cookieJar, cookieUri, csrfTokenKey, "DELETE", uri, json, callback)
+    },
 
-      getJson: (uri, callback) =>
-        get(uri)
-          .then(res => res.body)
-          .then(JSON.parse)
-          .tap(json => callback(null, json))
-          .catch(err => callback(err)),
+    get: (uri, callback) =>
+      get(cookieJar, uri)
+        .tap(res => callback(null, res.body))
+        .catch(err => callback(err)),
 
-      getBlob: (uri, callback) => {
-        callback(null, request({
-          method: "GET",
-          headers: {
-            "Referer": cookieUri
-          },
-          jar: cookieJar,
-          uri
-        }))
-      },
+    getJson: (uri, callback) =>
+      get(cookieJar, uri)
+        .then(res => res.body)
+        .then(JSON.parse)
+        .tap(json => callback(null, json))
+        .catch(err => callback(err)),
 
-      getCookieJar : () => {
-        cookieJar
-      }
-    }))
+    getBlob: (uri, callback) => {
+      callback(null, request({
+        method: "GET",
+        headers: {
+          "Referer": cookieUri
+        },
+        jar: cookieJar,
+        uri
+      }))
+    },
+
+    getCookieJar: () => cookieJar
+  }
+}
+
+function get(cookieJar, uri) {
+  return requestAsync({
+    method: "GET",
+    jar: cookieJar,
+    headers: {
+      "Accept": "application/json"
+    },
+    uri
+  })
+}
+
+function requestWithMethod(cookieJar, cookieUri, csrfTokenKey, method, uri, json, callback) {
+  const csrftoken = _(cookieJar.getCookies(cookieUri)).find(c => c.key === csrfTokenKey).value
+
+  return requestAsync({
+    method: method,
+    headers: {
+      "X-CSRFToken": csrftoken,
+      "X-Requested-With": "XMLHttpRequest", // TODO: only needed for beatport?
+      "Referer": cookieUri
+    },
+    jar: cookieJar,
+    uri,
+    json
+  })
+    .then(res => res.body)
+    .tap(json => callback(null, json))
+    .catch(err => callback(err))
 }
 
 module.exports = {
-  init
+  init,
+  initWithSession
 }
