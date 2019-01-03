@@ -3,6 +3,10 @@ const bpApi = require("./beatport-api.js")
 
 let { username, password } = require("minimist")(process.argv.slice(2))
 
+if (!username) {
+  username = prompt("Username: ")
+}
+
 if (!password) {
   password = prompt.hide(`Password for ${username} for Beatport: `)
 }
