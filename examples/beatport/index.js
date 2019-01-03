@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 const prompt = require("prompt-sync")()
 const bpApi = require("./beatport-api.js")
 
