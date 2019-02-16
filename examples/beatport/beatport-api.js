@@ -34,7 +34,7 @@ const handleCreateSessionResponse = callback => (err, session) => {
 
 const initializers = {
   initWithSession: (sessionCookieValue, csrfToken, callback) => {
-    return initWithSession(sessionCookieKey, sessionCookieValue, cookieUri, csrfTokenKey, csrfToken, handleCreateSessionResponse(callback))
+    return initWithSession({[sessionCookieKey]: sessionCookieValue, [csrfTokenKey]: csrfToken, cookieUri}, handleCreateSessionResponse(callback))
   },
   init: (username, password, callback) => {
     return init(cookieUri, loginUri, username, password, csrfTokenKey, sessionCookieKey, handleCreateSessionResponse(callback))
