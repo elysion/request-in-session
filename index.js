@@ -1,6 +1,6 @@
 const Promise = require("bluebird")
 
-const request = require("request-promise").defaults({ strictSSL: false })
+const request = require("request-promise").defaults({ strictSSL: false, resolveWithFullResponse: true })
 const Cookie = require("tough-cookie").Cookie
 const _ = require("lodash")
 
@@ -22,7 +22,7 @@ const init = function (cookieUri, loginUri, username, password, csrfTokenKey, se
       .then(getCsrfTokenCookie)
       .then(csrftoken => submitLogin(csrftoken, username, password))
       .then(getSessionIdCookie)
-      .tap(sessionid => {
+      .then(sessionid => {
         if (sessionid === undefined) {
           throw new Error("Login failed, please check credentials")
         }
@@ -85,28 +85,37 @@ function createSessionRequestObject (cookieJar, cookieUri, csrfTokenKey) {
       return requestWithMethod(cookieJar, cookieUri, csrfTokenKey, "DELETE", uri, json, callback)
     },
 
-    get: (uri, callback) =>
-      get(cookieJar, uri)
-        .tap(res => callback(null, res.body))
-        .catch(err => callback(err)),
+    get: async (uri, callback) =>
+      {
+        try {
+          const res = await get(cookieJar, uri)
+          return callback(null, res.body)
+        } catch (e) {
+          return callback(e)
+        }
+      },
 
     getJson: (uri, callback) =>
-      get(cookieJar, uri)
-        .then(res => res.body)
-        .then(JSON.parse)
-        .tap(json => callback(null, json))
-        .catch(err => callback(err)),
+      {
+        return get(cookieJar, uri)
+          .then(res => res.body)
+          .then(JSON.parse)
+          .then(json => callback(null, json))
+          .catch(err => callback(err))
+      },
 
-    getBlob: (uri, callback) => {
-      callback(null, request({
+    getBlob: (uri, callback) =>
+      request({
         method: "GET",
         headers: {
           "Referer": cookieUri
         },
         jar: cookieJar,
         uri
-      }))
-    },
+      })
+        .then(res => callback(null, res))
+        .catch(err => callback(err))
+    ,
 
     getCookieJar: () => cookieJar
   }
@@ -124,7 +133,6 @@ function get(cookieJar, uri) {
 }
 
 function postFormData(cookieJar, cookieUri, uri, data, callback) {
-  console.log(JSON.stringify({cookieJar}, null, 2))
   return request({
     uri,
     method: "POST",
@@ -139,7 +147,7 @@ function postFormData(cookieJar, cookieUri, uri, data, callback) {
     jar: cookieJar
   })
     .then(res => res.body)
-    .tap(json => callback(null, json))
+    .then(json => callback(null, json))
     .catch(err => callback(err))
 }
 
@@ -158,7 +166,7 @@ function requestWithMethod(cookieJar, cookieUri, csrfTokenKey, method, uri, json
     json
   })
     .then(res => res.body)
-    .tap(json => callback(null, json))
+    .then(json => callback(null, json))
     .catch(err => callback(err))
 }
 
