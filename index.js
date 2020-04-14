@@ -1,12 +1,11 @@
 const Promise = require("bluebird")
 
-const request = require("request").defaults({ strictSSL: false })
-const requestAsync = Promise.promisify(request)
+const request = require("request-promise").defaults({ strictSSL: false })
 const Cookie = require("tough-cookie").Cookie
 const _ = require("lodash")
 
 const initWithSession = function (cookieProperties, cookieUri, callback) {
-  let cookieJar = requestAsync.jar()
+  let cookieJar = request.jar()
 
   Object.keys(cookieProperties).forEach(key => {
     cookieJar.setCookie(request.cookie(`${key}=${cookieProperties[key]}`), cookieUri)
@@ -16,7 +15,7 @@ const initWithSession = function (cookieProperties, cookieUri, callback) {
 }
 
 const init = function (cookieUri, loginUri, username, password, csrfTokenKey, sessionKey, callback) {
-  let cookieJar = requestAsync.jar()
+  let cookieJar = request.jar()
 
   function login() {
     return loadLoginPage()
@@ -31,11 +30,11 @@ const init = function (cookieUri, loginUri, username, password, csrfTokenKey, se
   }
 
   function loadLoginPage() {
-    return requestAsync({ uri: loginUri, jar: cookieJar })
+    return request({ uri: loginUri, jar: cookieJar })
   }
 
   function submitLogin(csrftoken, username, password) {
-    return requestAsync({
+    return request({
       method: "POST",
       headers: { "Referer": loginUri },
       jar: cookieJar,
@@ -114,7 +113,7 @@ function createSessionRequestObject (cookieJar, cookieUri, csrfTokenKey) {
 }
 
 function get(cookieJar, uri) {
-  return requestAsync({
+  return request({
     method: "GET",
     jar: cookieJar,
     headers: {
@@ -126,7 +125,7 @@ function get(cookieJar, uri) {
 
 function postFormData(cookieJar, cookieUri, uri, data, callback) {
   console.log(JSON.stringify({cookieJar}, null, 2))
-  return requestAsync({
+  return request({
     uri,
     method: "POST",
     "X-Requested-With": "XMLHttpRequest",
@@ -147,7 +146,7 @@ function postFormData(cookieJar, cookieUri, uri, data, callback) {
 function requestWithMethod(cookieJar, cookieUri, csrfTokenKey, method, uri, json, callback) {
   const csrftoken = _(cookieJar.getCookies(cookieUri)).find(c => c.key === csrfTokenKey).value
 
-  return requestAsync({
+  return request({
     method: method,
     headers: {
       "X-CSRFToken": csrftoken, // TODO: only needed for beatport?
