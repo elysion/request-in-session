@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bluebird": "^3.5.1",
+    "bluebird": "^3.7.2",
     "lodash": "^4.17.4",
     "minimist": "^1.2.0",
     "prompt-sync": "^4.1.5",
