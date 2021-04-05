@@ -10,15 +10,15 @@
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.7.2",
-    "lodash": "^4.17.4",
-    "minimist": "^1.2.0",
-    "prompt-sync": "^4.1.5",
+    "lodash": "^4.17.21",
+    "minimist": "^1.2.5",
+    "prompt-sync": "^4.2.0",
     "request": "^2.88.2",
-    "request-promise": "^4.2.5",
-    "tough-cookie": "^2.3.3",
-    "tough-cookie-filestore": "0.0.1"
+    "request-promise": "^4.2.6",
+    "tough-cookie": "^4.0.0",
+    "tough-cookie-filestore": "^0.0.1"
   },
   "devDependencies": {
-    "eslint": "^4.12.1"
+    "eslint": "^7.23.0"
   }
 }
