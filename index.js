@@ -141,7 +141,8 @@ function postFormData(cookieJar, cookieUri, uri, data, callback) {
     "Origin": cookieUri,
     headers: {
       "Accept": "application/json",
-      "Content-Type": "application/x-www-form-urlencoded"
+      "Content-Type": "application/x-www-form-urlencoded",
+      "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"
     },
     form: data,
     jar: cookieJar
