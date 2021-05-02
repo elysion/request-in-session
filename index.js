@@ -1,5 +1,3 @@
-const Promise = require("bluebird")
-
 const request = require("request-promise").defaults({ strictSSL: false, resolveWithFullResponse: true })
 const Cookie = require("tough-cookie").Cookie
 const _ = require("lodash")
